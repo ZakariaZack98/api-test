@@ -1,0 +1,14 @@
+{
+  "name": "nodejs-practice",
+  "version": "1.0.0",
+  "main": "server-module.js",
+  "scripts": {
+    "dev": "nodemon server-module.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

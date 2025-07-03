@@ -2,8 +2,8 @@ const http = require("http");
 const { log, error } = require("console");
 const url = require("url");
 const event = require("events");
-const path = require("path");
 const fs = require("fs");
+const { fetchData } = require("./event");
 
 const eventEmmiter = new event();
 
@@ -25,16 +25,12 @@ const server = http.createServer((req, res) => {
   log(ourUrl);
   const match = resources.find((resource) => ourUrl.path === `/${resource}`);
   if (match) {
-    const eventName = `fetch${match.charAt(0).toUpperCase() + match.slice(1)}`;
-    eventEmmiter.emit(eventName, (data) => {
-      const targetPath = path.join(__dirname, `${match}.json`);
-      fs.writeFile(targetPath, JSON.stringify(data), (error) => {
-        if (error) log("Failed to write data to file. " + error);
-      });
-      fs.readFile(targetPath, "utf-8", (err, fileData) => {
-        res.end(fileData);
-      });
-    });
+    const path = fetchData(match);
+    fs.readFile(path, 'utf-8', (err, data) => {
+      if(err) {
+        log(err)
+      } else res.end(data)
+    })
   } else {
     res.end("Error: Invalid query");
   }

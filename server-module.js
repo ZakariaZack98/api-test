@@ -1,27 +1,35 @@
-const http = require('http');
-const {log} = require('console');
-const {URL} = require('url');
-const url = require('url');
+const http = require("http");
+const { log, error } = require("console");
+const url = require("url");
+const event = require("events");
+const path = require("path");
+const fs = require("fs");
 
-const data = 
-  {
-    "albumId": 1,
-    "id": 1,
-    "title": "accusamus beatae ad facilis cum similique qui sunt",
-    "url": "https://via.placeholder.com/600/92c952",
-    "thumbnailUrl": "https://via.placeholder.com/150/92c952"
-  };
-  
+const eventEmmiter = new event();
+
+eventEmmiter.on("fetchPhotos", (callback) => {
+  fetch("https://jsonplaceholder.typicode.com/photos")
+    .then((res) => res.json())
+    .then((data) => callback(data));
+});
+
 
 const server = http.createServer((req, res) => {
   const ourUrl = url.parse(req.url);
   log(ourUrl);
-  if(ourUrl.path == '/') {
-    const responseData = JSON.stringify(data);
-    res.end(responseData);
-  } else res.end('Error: Invalid query')
-})
+  if (ourUrl.path == "/photos") {
+    eventEmmiter.emit("fetchPhotos", (data) => {
+      const targetPath = path.join(__dirname, "photos.json");
+      fs.writeFile(targetPath, JSON.stringify(data), (error) => {
+        if (error) log("Failed to write data to file. " + error);
+      });
+      fs.readFile(targetPath, "utf-8", (err, data) => {
+        res.end(data);
+      });
+    });
+  } else res.end("Error: Invalid query");
+});
 
 server.listen(4040, () => {
-  log('server running on port 4040')
-})
+  log("server running on port 4040");
+});

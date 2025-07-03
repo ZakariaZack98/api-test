@@ -7,27 +7,37 @@ const fs = require("fs");
 
 const eventEmmiter = new event();
 
-eventEmmiter.on("fetchPhotos", (callback) => {
-  fetch("https://jsonplaceholder.typicode.com/photos")
-    .then((res) => res.json())
-    .then((data) => callback(data));
-});
+const resources = ["photos", "posts", "comments", "albums", "todos", "users"];
 
+resources.forEach((resource) => {
+  eventEmmiter.on(
+    `fetch${resource.charAt(0).toUpperCase() + resource.slice(1)}`,
+    (callback) => {
+      fetch(`https://jsonplaceholder.typicode.com/${resource}`)
+        .then((res) => res.json())
+        .then((data) => callback(data));
+    }
+  );
+});
 
 const server = http.createServer((req, res) => {
   const ourUrl = url.parse(req.url);
   log(ourUrl);
-  if (ourUrl.path == "/photos") {
-    eventEmmiter.emit("fetchPhotos", (data) => {
-      const targetPath = path.join(__dirname, "photos.json");
+  const match = resources.find((resource) => ourUrl.path === `/${resource}`);
+  if (match) {
+    const eventName = `fetch${match.charAt(0).toUpperCase() + match.slice(1)}`;
+    eventEmmiter.emit(eventName, (data) => {
+      const targetPath = path.join(__dirname, `${match}.json`);
       fs.writeFile(targetPath, JSON.stringify(data), (error) => {
         if (error) log("Failed to write data to file. " + error);
       });
-      fs.readFile(targetPath, "utf-8", (err, data) => {
-        res.end(data);
+      fs.readFile(targetPath, "utf-8", (err, fileData) => {
+        res.end(fileData);
       });
     });
-  } else res.end("Error: Invalid query");
+  } else {
+    res.end("Error: Invalid query");
+  }
 });
 
 server.listen(4040, () => {
